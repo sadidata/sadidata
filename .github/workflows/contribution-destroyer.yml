@@ -1,0 +1,64 @@
+name: 🚀 Contribution Destroyer Animation
+
+on:
+  schedule:
+    # Runs every day at 00:30 UTC (rebuilds with fresh contributions)
+    - cron: '30 0 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'generate_animation.py'
+      - '.github/workflows/contribution-destroyer.yml'
+  workflow_dispatch:  # Manual trigger from GitHub UI
+
+permissions:
+  contents: write  # needed to commit the generated SVG
+
+jobs:
+  generate:
+    name: Generate SVG Animation
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the profile repo
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # 2. Set up Python
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install requests
+
+      # 4. Generate the SVG
+      - name: Generate contribution-destroyer.svg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python generate_animation.py \
+            --username sadidata \
+            --token "$GITHUB_TOKEN" \
+            --output dist/contribution-destroyer.svg
+
+      # 5. Commit and push the SVG if it changed
+      - name: Commit SVG
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name  "GitHub Actions"
+          git add dist/contribution-destroyer.svg
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to SVG — skipping commit"
+          else
+            git commit -m "chore(bot): regenerate contribution-destroyer.svg [skip ci]"
+            git push
+          fi
