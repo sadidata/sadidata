@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
 generate_animation.py - Contribution Destroyer SVG Generator
-Fetches FULL last 52 weeks using from/to date parameters.
+Uses REST API to count commits per repo per day, displayed on grid.
+Spaceship destroys each active cell.
 """
 import argparse
 import math
 import os
 import random
 from datetime import datetime, timedelta, timezone
+from collections import defaultdict
 
 import requests
 
@@ -23,21 +25,35 @@ SVG_H = GRID_Y + DAYS * STEP + 60
 
 COLORS = {0: "#161b22", 1: "#0e4429", 2: "#006d32", 3: "#26a641", 4: "#39d353"}
 
+WEEKDAY_MAP = {
+    "Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3,
+    "Friday": 4, "Saturday": 5, "Sunday": 6
+}
+
 
 def fetch_contributions(username, token):
-    now = datetime.now(tz=timezone.utc)
-    one_year_ago = now - timedelta(weeks=52)
-    from_str = one_year_ago.strftime("%Y-%m-%dT00:00:00Z")
-    to_str = now.strftime("%Y-%m-%dT23:59:59Z")
-    query = """
-query($login: String!, $from: DateTime!, $to: DateTime!) {
+    """
+    Fetch contribution data using GraphQL contributionCalendar.
+    If it returns too few cells, augment with REST commit counts.
+    """
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    # Step 1: Get the GraphQL calendar grid
+    gql = """
+query($login: String!) {
   user(login: $login) {
-    contributionsCollection(from: $from, to: $to) {
+    contributionsCollection {
       contributionCalendar {
+        totalContributions
         weeks {
+          firstDay
           contributionDays {
             contributionCount
             date
+            weekday
           }
         }
       }
@@ -47,30 +63,84 @@ query($login: String!, $from: DateTime!, $to: DateTime!) {
 """
     r = requests.post(
         "https://api.github.com/graphql",
-        json={"query": query, "variables": {"login": username, "from": from_str, "to": to_str}},
+        json={"query": gql, "variables": {"login": username}},
         headers={"Authorization": f"Bearer {token}"},
         timeout=30,
     )
     r.raise_for_status()
     data = r.json()
     if "errors" in data:
-        raise RuntimeError(f"GraphQL errors: {data['errors']}")
-    weeks_raw = (
-        data["data"]["user"]["contributionsCollection"]
-        ["contributionCalendar"]["weeks"]
-    )
-    grid = []
-    for week in weeks_raw[-WEEKS:]:
-        levels = []
+        print(f"[!] GraphQL errors: {data['errors']}")
+
+    cal = data["data"]["user"]["contributionsCollection"]["contributionCalendar"]
+    total_gql = cal["totalContributions"]
+    print(f"[*] GraphQL reports {total_gql} contributions")
+
+    # Build date->count map from GQL
+    date_count = {}
+    for week in cal["weeks"]:
         for day in week["contributionDays"]:
-            c = day["contributionCount"]
+            if day["contributionCount"] > 0:
+                date_count[day["date"]] = day["contributionCount"]
+
+    # Step 2: Also pull REST events for last 90 days to count commits per day
+    print("[*] Fetching REST events to supplement...")
+    event_counts = defaultdict(int)
+    page = 1
+    while page <= 5:
+        resp = requests.get(
+            f"https://api.github.com/users/{username}/events",
+            headers=headers,
+            params={"per_page": 100, "page": page},
+            timeout=30,
+        )
+        if resp.status_code != 200:
+            break
+        events = resp.json()
+        if not events:
+            break
+        for ev in events:
+            if ev.get("type") == "PushEvent":
+                date_str = ev["created_at"][:10]
+                # Count number of commits in this push
+                commits = ev.get("payload", {}).get("commits", [])
+                commit_count = len(commits) if commits else 1
+                event_counts[date_str] += commit_count
+        page += 1
+
+    print(f"[*] REST events found dates: {dict(event_counts)}")
+
+    # Merge: use REST counts where GQL has 0
+    for date_str, count in event_counts.items():
+        if date_str not in date_count:
+            date_count[date_str] = count
+        else:
+            # Use max of both
+            date_count[date_str] = max(date_count[date_str], count)
+
+    print(f"[*] Final date_count: {date_count}")
+
+    # Build 53-week grid (Sun-Sat columns, Mon=0..Sun=6 rows)
+    now = datetime.now(tz=timezone.utc)
+    # Find the start of the grid (53 weeks ago, aligned to Sunday)
+    grid_start = now - timedelta(weeks=WEEKS)
+    # Align to start of week (Monday)
+    grid_start = grid_start - timedelta(days=grid_start.weekday())
+    grid_start = grid_start.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    grid = []
+    for w in range(WEEKS):
+        week_levels = []
+        for d in range(DAYS):
+            day = grid_start + timedelta(weeks=w, days=d)
+            date_str = day.strftime("%Y-%m-%d")
+            c = date_count.get(date_str, 0)
             lvl = 0 if c == 0 else (1 if c <= 2 else (2 if c <= 5 else (3 if c <= 9 else 4)))
-            levels.append(lvl)
-        while len(levels) < DAYS:
-            levels.append(0)
-        grid.append(levels)
-    while len(grid) < WEEKS:
-        grid.insert(0, [0] * DAYS)
+            week_levels.append(lvl)
+        grid.append(week_levels)
+
+    total_active = sum(1 for w in grid for lv in w if lv > 0)
+    print(f"[*] Grid has {total_active} active cells")
     return grid
 
 
@@ -208,10 +278,10 @@ def main():
     parser.add_argument("--token", required=True)
     parser.add_argument("--output", default="dist/contribution-destroyer.svg")
     args = parser.parse_args()
-    print(f"[*] Fetching contributions for @{args.username} (last 52 weeks)...")
+    print(f"[*] Fetching contributions for @{args.username}...")
     grid = fetch_contributions(args.username, args.token)
     total = sum(1 for w in grid for lv in w if lv > 0)
-    print(f"[*] {total} active cells found")
+    print(f"[*] {total} active cells will be destroyed")
     print("[*] Generating SVG...")
     svg = build_svg(grid, args.username)
     os.makedirs(os.path.dirname(args.output) or ".", exist_ok=True)
