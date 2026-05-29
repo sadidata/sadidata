@@ -6,7 +6,7 @@
 
 <img src="https://komarev.com/ghpvc/?username=sadidata&label=Profile+Views&color=0e75b6&style=flat" alt="profile views" />
 &nbsp;
-[![GitHub followers](https://img.shields.io/github/followers/sadidata?label=Follow&style=social)](https://github.com/sadidata)
+<a href="https://github.com/sadidata?tab=followers"><img src="https://img.shields.io/github/followers/sadidata?label=Follow&style=social" alt="GitHub followers"/></a>
 
 </div>
 
