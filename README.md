@@ -91,25 +91,23 @@ print(f"Hello! I'm {me.name}, based in {me.location}")
 
 ---
 
-## 📈 Contribution Graph
+## 🚀 Contribution Destroyer
 
-<div align="center">
+> *Auto-generated daily by GitHub Actions — a spaceship hunts and destroys every commit on the contribution grid*
+>
+> <div align="center">
 
-![Activity Graph](https://github-readme-activity-graph.vercel.app/graph?username=sadidata&theme=tokyo-night&bg_color=1a1b27&color=00b4d8&line=0077b6&point=ffffff&area=true&hide_border=true)
+![Contribution Destroyer](https://raw.githubusercontent.com/sadidata/sadidata/main/dist/contribution-destroyer.svg)
 
 </div>
 
 ---
 
-## 🎬 Data Flow — Custom Animation
+## 📈 Contribution Graph
 
 <div align="center">
 
-<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=2,4,12,30&height=80&section=header&text=&fontSize=0&animation=twinkling" alt="wave header"/>
-
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=13&duration=2000&pause=500&color=00B4D8&center=true&vCenter=true&width=700&height=40&lines=01001000+01101001+00100001+01001001+00100111+01101101+01000001+01100010+01100100+01110101;RAG+%E2%86%92+Chunk+%E2%86%92+Embed+%E2%86%92+Retrieve+%E2%86%92+Generate+%E2%86%92+Stream+%E2%86%92+%F0%9F%8E%AF;Agent+%3A+Perceive+%E2%86%92+Think+%E2%86%92+Act+%E2%86%92+Observe+%E2%86%92+Repeat;CLIP%3A+Image+%2B+Text+%E2%86%92+Shared+Embedding+Space+%E2%86%92+Similarity+Search;Vector+DB%3A+Query+%E2%86%92+Embed+%E2%86%92+ANN+Search+%E2%86%92+Re-rank+%E2%86%92+Answer;01000100+01000001+01010100+01000001+00100000+%7C+AI+%7C+PARIS" alt="Data flow animation" />
-
-<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=2,4,12,30&height=80&section=footer&text=&fontSize=0&animation=twinkling&reversal=true" alt="wave footer"/>
+![Activity Graph](https://github-readme-activity-graph.vercel.app/graph?username=sadidata&theme=tokyo-night&bg_color=1a1b27&color=00b4d8&line=0077b6&point=ffffff&area=true&hide_border=true)
 
 </div>
 
@@ -129,7 +127,5 @@ print(f"Hello! I'm {me.name}, based in {me.location}")
 <div align="center">
 
 *"Without data, you're just another person with an opinion."* — W. Edwards Deming
-
-<img width="100%" src="https://capsule-render.vercel.app/api?type=rect&color=gradient&customColorList=0,2,2,5,30&height=2" alt="divider"/>
 
 </div>
