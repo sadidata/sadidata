@@ -101,17 +101,15 @@ print(f"Hello! I'm {me.name}, based in {me.location}")
 
 ---
 
-## 🌊 Contribution Animation
+## 🎬 Data Flow — Custom Animation
 
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://github-readme-activity-graph.vercel.app/graph?username=sadidata&theme=tokyo-night&bg_color=0d1117&color=00b4d8&line=0077b6&point=00b4d8&area=true&hide_border=true&custom_title=Abdulaziz+Contribution+Wave"/>
-    <img alt="Contribution wave" src="https://github-readme-activity-graph.vercel.app/graph?username=sadidata&theme=github-compact&bg_color=ffffff&color=0077b6&line=00b4d8&point=0077b6&area=true&hide_border=true&custom_title=Abdulaziz+Contribution+Wave"/>
-</picture>picture>
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=2,4,12,30&height=80&section=header&text=&fontSize=0&animation=twinkling" alt="wave header"/>
 
-<!-- Neural network animated banner -->
-<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=120&section=footer&text=&fontSize=0&animation=twinkling" alt="wave footer"/>
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=13&duration=2000&pause=500&color=00B4D8&center=true&vCenter=true&width=700&height=40&lines=01001000+01101001+00100001+01001001+00100111+01101101+01000001+01100010+01100100+01110101;RAG+%E2%86%92+Chunk+%E2%86%92+Embed+%E2%86%92+Retrieve+%E2%86%92+Generate+%E2%86%92+Stream+%E2%86%92+%F0%9F%8E%AF;Agent+%3A+Perceive+%E2%86%92+Think+%E2%86%92+Act+%E2%86%92+Observe+%E2%86%92+Repeat;CLIP%3A+Image+%2B+Text+%E2%86%92+Shared+Embedding+Space+%E2%86%92+Similarity+Search;Vector+DB%3A+Query+%E2%86%92+Embed+%E2%86%92+ANN+Search+%E2%86%92+Re-rank+%E2%86%92+Answer;01000100+01000001+01010100+01000001+00100000+%7C+AI+%7C+PARIS" alt="Data flow animation" />
+
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=2,4,12,30&height=80&section=footer&text=&fontSize=0&animation=twinkling&reversal=true" alt="wave footer"/>
 
 </div>
 
@@ -132,65 +130,6 @@ print(f"Hello! I'm {me.name}, based in {me.location}")
 
 *"Without data, you're just another person with an opinion."* — W. Edwards Deming
 
-<!-- ANIMATED NEURAL NETWORK BANNER -->
-<img width="100%" src="https://capsule-render.vercel.app/api?type=rect&color=gradient&customColorList=0,2,2,5,30&height=3&section=header" />
-
-<br/>
-
-<!-- DATA FLOW ANIMATION - custom SVG -->
-<svg width="800" height="120" viewBox="0 0 800 120" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-          <linearGradient id="flow" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" style="stop-color:#0d1117;stop-opacity:1"/>
-                    <stop offset="50%" style="stop-color:#1a1b27;stop-opacity:1"/>
-                    <stop offset="100%" style="stop-color:#0d1117;stop-opacity:1"/>
-          </linearGradient>linearGradient>
-          <filter id="glow">
-                    <feGaussianBlur stdDeviation="2" result="blur"/>
-                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>feMerge>
-          </filter>filter>
-  </defs>defs>
-  <rect width="800" height="120" fill="url(#flow)" rx="8"/>
-  <!-- Animated data nodes -->
-  <g fill="#00b4d8" filter="url(#glow)">
-          <circle cx="80" cy="60" r="4" opacity="0.9">
-                    <animate attributeName="cx" values="80;720;80" dur="8s" repeatCount="indefinite"/>
-                    <animate attributeName="opacity" values="0;1;0" dur="8s" repeatCount="indefinite"/>
-          </circle>circle>
-          <circle cx="200" cy="40" r="3" opacity="0.7">
-                    <animate attributeName="cx" values="200;720;200" dur="6s" begin="1s" repeatCount="indefinite"/>
-                    <animate attributeName="opacity" values="0;0.8;0" dur="6s" begin="1s" repeatCount="indefinite"/>
-          </circle>circle>
-          <circle cx="120" cy="80" r="3.5" opacity="0.8">
-                    <animate attributeName="cx" values="120;720;120" dur="9s" begin="2s" repeatCount="indefinite"/>
-                    <animate attributeName="opacity" values="0;1;0" dur="9s" begin="2s" repeatCount="indefinite"/>
-          </circle>circle>
-          <circle cx="60" cy="55" r="2.5" opacity="0.6">
-                    <animate attributeName="cx" values="60;720;60" dur="7s" begin="0.5s" repeatCount="indefinite"/>
-                    <animate attributeName="opacity" values="0;0.7;0" dur="7s" begin="0.5s" repeatCount="indefinite"/>
-          </circle>circle>
-          <circle cx="150" cy="70" r="3" opacity="0.8">
-                    <animate attributeName="cx" values="150;720;150" dur="5s" begin="3s" repeatCount="indefinite"/>
-                    <animate attributeName="opacity" values="0;1;0" dur="5s" begin="3s" repeatCount="indefinite"/>
-          </circle>circle>
-  </g>g>
-      <!-- Binary data stream -->
-      <g font-family="Courier New" font-size="11" fill="#0077b6" opacity="0.4">
-              <text x="20" y="30">
-                        01001000 01100101 01101100 01101100
-                        <animate attributeName="x" values="20;800;20" dur="12s" repeatCount="indefinite"/>
-              </text>text>
-              <text x="20" y="95">
-                        10110100 11010000 01001001 00000000
-                        <animate attributeName="x" values="20;800;20" dur="15s" begin="2s" repeatCount="indefinite"/>
-              </text>text>
-      </g>g>
-      <!-- Central label -->
-      <text x="400" y="68" text-anchor="middle" font-family="Fira Code, monospace" font-size="14" fill="#00b4d8" opacity="0.9" font-weight="bold">
-              [ SADIDATA · AI · DATA SCIENCE · PARIS ]
-      </text>text>
-</svg>svg>
+<img width="100%" src="https://capsule-render.vercel.app/api?type=rect&color=gradient&customColorList=0,2,2,5,30&height=2" alt="divider"/>
 
 </div>
-  </feMerge>
-  </defs>
