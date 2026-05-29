@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
 generate_animation.py - Contribution Destroyer SVG Generator
-Spaceship that flies across the GitHub contribution grid destroying commits.
+Fetches FULL last 52 weeks using from/to date parameters.
 """
 import argparse
-import json
 import math
 import os
 import random
@@ -26,30 +25,38 @@ COLORS = {0: "#161b22", 1: "#0e4429", 2: "#006d32", 3: "#26a641", 4: "#39d353"}
 
 
 def fetch_contributions(username, token):
+    now = datetime.now(tz=timezone.utc)
+    one_year_ago = now - timedelta(weeks=52)
+    from_str = one_year_ago.strftime("%Y-%m-%dT00:00:00Z")
+    to_str = now.strftime("%Y-%m-%dT23:59:59Z")
     query = """
-    query($login: String!) {
-      user(login: $login) {
-        contributionsCollection {
-          contributionCalendar {
-            weeks {
-              contributionDays {
-                contributionCount
-              }
-            }
+query($login: String!, $from: DateTime!, $to: DateTime!) {
+  user(login: $login) {
+    contributionsCollection(from: $from, to: $to) {
+      contributionCalendar {
+        weeks {
+          contributionDays {
+            contributionCount
+            date
           }
         }
       }
     }
-    """
+  }
+}
+"""
     r = requests.post(
         "https://api.github.com/graphql",
-        json={"query": query, "variables": {"login": username}},
+        json={"query": query, "variables": {"login": username, "from": from_str, "to": to_str}},
         headers={"Authorization": f"Bearer {token}"},
         timeout=30,
     )
     r.raise_for_status()
+    data = r.json()
+    if "errors" in data:
+        raise RuntimeError(f"GraphQL errors: {data['errors']}")
     weeks_raw = (
-        r.json()["data"]["user"]["contributionsCollection"]
+        data["data"]["user"]["contributionsCollection"]
         ["contributionCalendar"]["weeks"]
     )
     grid = []
@@ -80,10 +87,10 @@ def build_svg(grid, username):
     targets.sort(key=lambda t: (t[0], t[1]))
     n = len(targets)
 
-    MOVE_SPEED = 0.14
-    LASER_DUR = 0.18
-    EXPLODE_DUR = 0.28
-    PAUSE = 2.0
+    MOVE_SPEED = 0.08
+    LASER_DUR = 0.14
+    EXPLODE_DUR = 0.22
+    PAUSE = 3.0
 
     events = []
     t = 0.0
@@ -93,7 +100,7 @@ def build_svg(grid, username):
         tx = cx(col) - 22
         ty = cy(row)
         dist = math.hypot(abs(tx - sx), abs(ty - sy)) / STEP
-        mv = max(0.15, dist * MOVE_SPEED)
+        mv = max(0.10, dist * MOVE_SPEED)
         events.append({"t": t, "type": "move", "fx": sx, "fy": sy, "tx": tx, "ty": ty, "dur": mv})
         t += mv
         events.append({"t": t, "type": "laser", "sx": tx + 11, "sy": ty, "ex": cx(col), "ey": cy(row), "dur": LASER_DUR})
@@ -128,18 +135,18 @@ def build_svg(grid, username):
         if dn:
             a(f'<text x="{GRID_X-4}" y="{GRID_Y + i*STEP + CELL}" text-anchor="end" font-family="Fira Code,monospace" font-size="8" fill="#8b949e">{dn}</text>')
 
-    now = datetime.now(tz=timezone.utc)
+    now2 = datetime.now(tz=timezone.utc)
     for w in range(0, WEEKS, 4):
-        d = now - timedelta(weeks=WEEKS - w)
+        d = now2 - timedelta(weeks=WEEKS - w)
         lbl = d.strftime("%b")
         a(f'<text x="{GRID_X + w*STEP}" y="{GRID_Y-4}" font-family="Fira Code,monospace" font-size="8" fill="#8b949e">{lbl}</text>')
 
     a('<g id="grid">')
     for col, week in enumerate(grid):
         for row, level in enumerate(week):
-            rx = GRID_X + col * STEP
-            ry = GRID_Y + row * STEP
-            a(f'<rect id="c{col}_{row}" x="{rx}" y="{ry}" width="{CELL}" height="{CELL}" rx="2" fill="{COLORS[level]}"/>')
+            rx2 = GRID_X + col * STEP
+            ry2 = GRID_Y + row * STEP
+            a(f'<rect id="c{col}_{row}" x="{rx2}" y="{ry2}" width="{CELL}" height="{CELL}" rx="2" fill="{COLORS[level]}"/>')
     a('</g>')
 
     for ev in events:
@@ -148,8 +155,6 @@ def build_svg(grid, username):
         col2, row2 = ev["col"], ev["row"]
         ts = ev["t"]
         dur = ev["dur"]
-        rx = GRID_X + col2 * STEP
-        ry = GRID_Y + row2 * STEP
         a(f'<animate xlink:href="#c{col2}_{row2}" attributeName="opacity" values="1;1;0;0" keyTimes="0;{ts/total:.4f};{(ts+0.04)/total:.4f};1" dur="{total:.2f}s" repeatCount="indefinite"/>')
         ox, oy = cx(col2), cy(row2)
         a(f'<circle cx="{ox:.1f}" cy="{oy:.1f}" r="0" fill="url(#eg)" filter="url(#xglow)" opacity="0"><animate attributeName="r" values="0;0;{CELL*1.8:.0f};0" keyTimes="0;{ts/total:.4f};{(ts+dur*0.5)/total:.4f};{(ts+dur)/total:.4f}" dur="{total:.2f}s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;1;0" keyTimes="0;{ts/total:.4f};{(ts+dur*0.3)/total:.4f};{(ts+dur)/total:.4f}" dur="{total:.2f}s" repeatCount="indefinite"/></circle>')
@@ -186,8 +191,6 @@ def build_svg(grid, username):
         kts.append("1")
         vals = ";".join(f"{x},{y}" for x, y in zip(xs, ys))
         kt_str = ";".join(kts)
-        start_x = float(move_evs[0]["fx"])
-        start_y = float(move_evs[0]["fy"])
         a(f'<g filter="url(#glow)"><animateTransform attributeName="transform" type="translate" values="{vals}" keyTimes="{kt_str}" dur="{total:.2f}s" repeatCount="indefinite" calcMode="linear"/>')
         a('<path d="M0,-8 L18,0 L0,8 L3,3 L-5,3 L-5,-3 L3,-3 Z" fill="url(#sg)" opacity="0.95"/>')
         a('<ellipse cx="-6" cy="0" rx="5" ry="2.5" fill="#00b4d8" opacity="0.6"><animate attributeName="rx" values="5;7;4;6;5" dur="0.35s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.6;0.9;0.4;0.8;0.6" dur="0.35s" repeatCount="indefinite"/></ellipse>')
@@ -205,7 +208,7 @@ def main():
     parser.add_argument("--token", required=True)
     parser.add_argument("--output", default="dist/contribution-destroyer.svg")
     args = parser.parse_args()
-    print(f"[*] Fetching contributions for @{args.username}...")
+    print(f"[*] Fetching contributions for @{args.username} (last 52 weeks)...")
     grid = fetch_contributions(args.username, args.token)
     total = sum(1 for w in grid for lv in w if lv > 0)
     print(f"[*] {total} active cells found")
