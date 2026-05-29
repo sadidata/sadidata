@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 generate_animation.py - Contribution Destroyer SVG Generator
-Uses REST API to count commits per repo per day, displayed on grid.
-Spaceship destroys each active cell.
+Fetches commits from REST events API + GraphQL calendar.
+Grid aligned to current week to ensure today is included.
 """
 import argparse
 import math
@@ -25,23 +25,14 @@ SVG_H = GRID_Y + DAYS * STEP + 60
 
 COLORS = {0: "#161b22", 1: "#0e4429", 2: "#006d32", 3: "#26a641", 4: "#39d353"}
 
-WEEKDAY_MAP = {
-    "Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3,
-    "Friday": 4, "Saturday": 5, "Sunday": 6
-}
-
 
 def fetch_contributions(username, token):
-    """
-    Fetch contribution data using GraphQL contributionCalendar.
-    If it returns too few cells, augment with REST commit counts.
-    """
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github.v3+json"
     }
 
-    # Step 1: Get the GraphQL calendar grid
+    # Step 1: GraphQL calendar
     gql = """
 query($login: String!) {
   user(login: $login) {
@@ -49,11 +40,9 @@ query($login: String!) {
       contributionCalendar {
         totalContributions
         weeks {
-          firstDay
           contributionDays {
             contributionCount
             date
-            weekday
           }
         }
       }
@@ -69,25 +58,20 @@ query($login: String!) {
     )
     r.raise_for_status()
     data = r.json()
-    if "errors" in data:
-        print(f"[!] GraphQL errors: {data['errors']}")
-
     cal = data["data"]["user"]["contributionsCollection"]["contributionCalendar"]
     total_gql = cal["totalContributions"]
     print(f"[*] GraphQL reports {total_gql} contributions")
 
-    # Build date->count map from GQL
     date_count = {}
     for week in cal["weeks"]:
         for day in week["contributionDays"]:
             if day["contributionCount"] > 0:
                 date_count[day["date"]] = day["contributionCount"]
 
-    # Step 2: Also pull REST events for last 90 days to count commits per day
-    print("[*] Fetching REST events to supplement...")
+    # Step 2: REST events API for commits per day
+    print("[*] Fetching REST push events...")
     event_counts = defaultdict(int)
-    page = 1
-    while page <= 5:
+    for page in range(1, 6):
         resp = requests.get(
             f"https://api.github.com/users/{username}/events",
             headers=headers,
@@ -102,31 +86,33 @@ query($login: String!) {
         for ev in events:
             if ev.get("type") == "PushEvent":
                 date_str = ev["created_at"][:10]
-                # Count number of commits in this push
                 commits = ev.get("payload", {}).get("commits", [])
-                commit_count = len(commits) if commits else 1
+                commit_count = max(1, len(commits))
                 event_counts[date_str] += commit_count
-        page += 1
 
-    print(f"[*] REST events found dates: {dict(event_counts)}")
+    print(f"[*] REST push events by date: {dict(event_counts)}")
 
-    # Merge: use REST counts where GQL has 0
+    # Merge both sources
     for date_str, count in event_counts.items():
         if date_str not in date_count:
             date_count[date_str] = count
         else:
-            # Use max of both
             date_count[date_str] = max(date_count[date_str], count)
 
-    print(f"[*] Final date_count: {date_count}")
+    print(f"[*] Merged date_count: {date_count}")
 
-    # Build 53-week grid (Sun-Sat columns, Mon=0..Sun=6 rows)
+    # Build 53-week grid aligned so current week is the LAST column
     now = datetime.now(tz=timezone.utc)
-    # Find the start of the grid (53 weeks ago, aligned to Sunday)
-    grid_start = now - timedelta(weeks=WEEKS)
-    # Align to start of week (Monday)
-    grid_start = grid_start - timedelta(days=grid_start.weekday())
-    grid_start = grid_start.replace(hour=0, minute=0, second=0, microsecond=0)
+    # Monday of current week (weekday: Mon=0 ... Sun=6)
+    days_since_monday = now.weekday()  # Python: Mon=0, Fri=4
+    monday_this_week = now - timedelta(days=days_since_monday)
+    monday_this_week = monday_this_week.replace(hour=0, minute=0, second=0, microsecond=0)
+    # Grid starts 52 weeks before monday of current week
+    grid_start = monday_this_week - timedelta(weeks=52)
+
+    print(f"[*] Grid start: {grid_start.strftime('%Y-%m-%d')} (Mon)")
+    print(f"[*] Monday this week: {monday_this_week.strftime('%Y-%m-%d')}")
+    print(f"[*] Today: {now.strftime('%Y-%m-%d')} (weekday {now.weekday()})")
 
     grid = []
     for w in range(WEEKS):
@@ -140,7 +126,7 @@ query($login: String!) {
         grid.append(week_levels)
 
     total_active = sum(1 for w in grid for lv in w if lv > 0)
-    print(f"[*] Grid has {total_active} active cells")
+    print(f"[*] Grid active cells: {total_active}")
     return grid
 
 
@@ -282,7 +268,6 @@ def main():
     grid = fetch_contributions(args.username, args.token)
     total = sum(1 for w in grid for lv in w if lv > 0)
     print(f"[*] {total} active cells will be destroyed")
-    print("[*] Generating SVG...")
     svg = build_svg(grid, args.username)
     os.makedirs(os.path.dirname(args.output) or ".", exist_ok=True)
     with open(args.output, "w", encoding="utf-8") as f:
